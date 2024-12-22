@@ -8,49 +8,32 @@ filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "input")
 
 lines = read(filepath)
 
+DIRS = ["^", ">", "v", "<"]
+INCRS = {
+    "^": (0, -1),
+    ">": (+1, 0),
+    "v": (0, +1),
+    "<": (-1, 0)
+}
 
-def move(grid, x, y, d):
+def move(grid, W, H, x, y, d):
     """ Make the guard move forward once, or turn in-place once if an obstacle is in the way. """
 
-    W, H = len(grid[0]), len(grid)
+    dx, dy = INCRS[d]
+    right = (DIRS.index(d) + 1) % 4
 
-    if d == "^":
-        if y != 0 and grid[y-1][x] == "#":
-            d = ">"
-            grid[y][x] = ">"
-        else:
-            y = y-1
-            if y > 0:
-                grid[y][x] = "^"
+    if 0 <= x+dx < W and 0 <= y+dy < H and grid[y+dy][x+dx] == "#":
+        return x, y, DIRS[right]
+    else:
+        return x+dx, y+dy, d
 
-    elif d == ">":
-        if x != W-1 and grid[y][x+1] == "#":
-            d = "v"
-            grid[y][x] = "v"
-        else:
-            x = x+1
-            if x < W:
-                grid[y][x] = ">"
 
-    elif d == "v":
-        if y != H-1 and grid[y+1][x] == "#":
-            d = "<"
-            grid[y][x] = "<"
-        else:
-            y = y+1
-            if y < H:
-                grid[y][x] = "v"
-
-    elif d == "<":
-        if x != 0 and grid[y][x-1] == "#":
-            d = "^"
-            grid[y][x] = "^"
-        else:
-            x = x-1
-            if x > 0:
-                grid[y][x] = "<"
-
-    return x, y, d
+def previous_position(x, y, d):
+    # previous position, and turn right
+    right = (DIRS.index(d) + 1) % 4
+    opposite = (DIRS.index(d) + 2) % 4
+    dx, dy = INCRS[DIRS[opposite]]
+    return x+dx, y+dy, DIRS[right]
 
 
 grid = [[c for c in line] for line in lines]
@@ -65,10 +48,14 @@ x0, y0, d0 = x, y, d
 
 
 # Make the guard move a first time until they leave the area
-candidates = set()
+path: list[tuple[int, int, str]] = []
+candidates: set[tuple[int, int]] = set()
 while 0 <= x < W and 0 <= y < H:
+    if (x, y) not in candidates:
+        path.append((x, y, d))  # save the first time this position is reached
     candidates.add((x, y))
-    x, y, d = move(grid, x, y, d)  # also write the path on the grid
+
+    x, y, d = move(grid, W, H, x, y, d)
 
 
 if star != 2:
@@ -78,19 +65,25 @@ if star != 2:
 if star != 1:
     # 1. The initial position (x0,y0) is not required to be part of a loop
     # 2. An obstacle is only useful when placed on the original path (to make it deviate)
+    # 3. Do not walk through the original path everytime an obstacle is tried, that would be a lot of useless iterations
 
-    candidates.remove((x0, y0))  # we cannot place an obstacle on the guard's initial position
+    # We cannot place an obstacle on the guard's initial position
+    path.pop(0)
+    candidates.remove((x0, y0))
 
     nb_loops = 0
-    for ox, oy in candidates:  # Try to place an obstacle at each position on the original path of the guard
-        print(f"- ({ox}, {oy})")
+    for ox, oy, od in path:
+        # Try to place an obstacle at each position on the original path of the guard, then search for a loop.
+        # Each position in `path` also have a direction, which can be reversed to find the previous position,
+        # where no wall could have been.
+        print(f"- ({ox}, {oy}, {od})")
 
         grid[oy][ox] = "#"
-        x, y, d = x0, y0, d0
+        x, y, d = previous_position(ox, oy, od)  # start just before the newly placed obstacle
 
         visited = []
         while 0 <= x < W and 0 <= y < H:
-            x, y, d = move(grid, x, y, d)
+            x, y, d = move(grid, W, H, x, y, d)
             if (x, y, d) in visited:
                 nb_loops += 1
                 print(f"loop found! count={nb_loops}, ox={ox}, oy={oy}")
