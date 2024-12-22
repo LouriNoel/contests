@@ -11,17 +11,20 @@ lines = read(filepath)
 
 src = "".join(lines)
 
+# use regex with grouping to retrieve the values easily
 pattern = re.compile(r"mul\((\d+),(\d+)\)")
-matches = re.findall(pattern, src)
 
-result = sum(int(a)*int(b) for a, b in matches)
-print(f" *: {result}")
+if star != 2:
+    matches = re.findall(pattern, src)
+    result = sum(int(a)*int(b) for a, b in matches)
+    print(f" *: {result}")
 
-dont_li = src.split("don't()")
-enabled = True
-result = sum(int(a)*int(b) for a, b in re.findall(pattern, dont_li[0]))
-for dont_part in dont_li[1:]:
-    do_li = dont_part.split("do()")
-    for do_part in do_li[1:]:
-        result += sum(int(a) * int(b) for a, b in re.findall(pattern, do_part))
-print(f"**: {result}")
+if star != 1:
+    src = "do()" + src  # enable at beginning
+    dont_clauses = src.split("don't()")
+
+    # only keep enabled parts
+    enabled_src = "#".join(clause[i:] if (i := clause.find("do()")) != -1 else "" for clause in dont_clauses)
+
+    result = sum(int(a) * int(b) for a, b in re.findall(pattern, enabled_src))
+    print(f"**: {result}")
