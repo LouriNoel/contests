@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 from utils.sylis import read
@@ -8,55 +9,57 @@ filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "input")
 
 lines = read(filepath)
 
-XMAS = "XMAS"
-INCR = [-1, 0, 1]
+patterns1 = [
+    ["XMAS"],
+    [
+        "X...",
+        ".M..",
+        "..A.",
+        "...S",
+    ],
+    [
+        "X",
+        "M",
+        "A",
+        "S",
+    ],
+    [
+        "...X",
+        "..M.",
+        ".A..",
+        "S...",
+    ],
+    ["SAMX"],
+    [
+        "S...",
+        ".A..",
+        "..M.",
+        "...X",
+    ],
+    [
+        "S",
+        "A",
+        "M",
+        "X",
+    ],
+    [
+        "...S",
+        "..A.",
+        ".M..",
+        "X...",
+    ]
+]
 
-def check_once(grid, x, y, dx, dy):
-    # Check the "XMAS" word on the (dx, dy) direction
-    nX, nY = len(grid[0]), len(grid)
-    for i, c in enumerate(XMAS):
-        X, Y = x+dx*i, y+dy*i
-        if X < 0 or Y < 0 or X >= nX or Y >= nY:
-            return False
-        if grid[y+dy*i][x+dx*i] != c:
-            return False
-    return True
-
-def check1(grid, x, y):
-    found = []
-    for dx in INCR:
-        for dy in INCR:
-            if not (dx == 0 and dy == 0):
-                # Check the "XMAS" word on the 8 directions
-                if check_once(grid, x, y, dx, dy):
-                    found.append((x, y, dx, dy))
-    return found
-
-def star1(grid):
-    instances = []
-
-    for y, line in enumerate(grid):
-        for x, c in enumerate(line):
-            if c == "X":
-                instances.extend(check1(grid, x, y))
-
-    print(len(instances))
-
-
-if star != 2:
-    star1(lines)
-
-
-patterns = [
+patterns2 = [
     [
         "M.S",
         ".A.",
         "M.S"
     ],
     [
-        "S.S",
+        "M.M",
         ".A.",
-        "M.M"
+        "S.S"
     ],
     [
         "S.M",
@@ -64,33 +67,43 @@ patterns = [
         "S.M"
     ],
     [
-        "M.M",
+        "S.S",
         ".A.",
-        "S.S"
+        "M.M"
     ]
 ]
 
-def check_pattern(grid, x, y, p):
-    # Check if a pattern matches at position (x, y) on the grid
-    for dy, pl in enumerate(p):
-        for dx, c in enumerate(pl):
-            if c != ".":
-                if grid[y + dy][x + dx] != c:
-                    return False
-    return True
 
-def check2(grid):
-    count = 0
-    for y in range(len(grid)-3+1):
-        for x in range(len(grid[0])-3+1):
-            # Check any of the four rotated "MAS" pattern on the whole grid
-            for p in patterns:
-                if check_pattern(grid, x, y, p):
-                    count += 1
-                    break
-    return count
+def findall_pattern_in_grid(grid: list[str], sub: list[str], unused: str = "§") -> list[tuple[int, int]]:
+    # to ensure that a line match does not wrap, we must add an unused character at the end of each line
 
+    w, sub_w = len(grid[0]), len(sub[0])
+    dw = w - sub_w
+    length_pattern = ".{" + str(dw+1) + "}" # +1 to account for the added separator at each EOL
+
+    matched_indexes = []
+
+    row_grid = unused.join(grid)
+    row_pattern = re.compile(length_pattern.join(sub))
+    # cannot use re.finditer because it does not allow overlapping matches
+    start = 0
+    while (m := row_pattern.search(row_grid, start)) is not None:
+        i = m.start()
+        x, y = i % w, i // w
+        matched_indexes.append((x, y))
+        start = i+1
+
+    return matched_indexes
+
+
+if star != 2:
+    indexes = []
+    for i, pattern in enumerate(patterns1):
+        indexes.extend((i, x, y) for x, y in findall_pattern_in_grid(lines, pattern))
+    print(f" *: {len(indexes)}")
 
 if star != 1:
-    result = check2(lines)
-    print(result)
+    indexes = []
+    for i, pattern in enumerate(patterns2):
+        indexes.extend((i, x, y) for x, y in findall_pattern_in_grid(lines, pattern))
+    print(f"**: {len(indexes)}")
