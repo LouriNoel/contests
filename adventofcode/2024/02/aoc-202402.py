@@ -9,19 +9,16 @@ filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "input")
 lines = read(filepath)
 
 def is_safe(levels: list[int]) -> bool:
-    #differences = [b - a for a, b in zip(levels[:-1], levels[1:])]
-    differences = [levels[i] - levels[i-1] for i in range(1, len(levels))]
-    return ((all(delta >= 0 for delta in differences) or all(delta <= 0 for delta in differences))
-            and all(delta != 0 and abs(delta) <= 3 for delta in differences))
+    """ Check if a report is safe. """
+    deltas = [levels[i] - levels[i - 1] for i in range(1, len(levels))]
+    min_delta, max_delta = min(deltas), max(deltas)
+    # `min_delta * max_delta > 0` checks for both sign equality and "at least 1" requirement
+    return min_delta * max_delta > 0 and min_delta >= -3 and max_delta <= 3
 
-def is_damp(report: list[int]) -> bool:
-    for i in range(len(report)):
-        damp = report.copy()
-        damp.pop(i)
-        if is_safe(damp):  # check if the report is safe when removing the i-th element, for any i
-            return True
-    return False
-
+def is_damp(levels: list[int]) -> bool:
+    """ Check if a report is safe when ignoring one of its levels. """
+    # check if the report is safe when removing the i-th element, for any i
+    return any(is_safe(levels[:i] + levels[i+1:]) for i in range(len(levels)))
 
 reports = [numbers(line) for line in lines]
 safeness = [is_safe(report) for report in reports]
