@@ -1,46 +1,49 @@
 import os
 import sys
 
-from utils.sylis import read
+from utils.sylis import read, numbers
 
 star = int(sys.argv[1]) if len(sys.argv) == 2 else 0
 filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "input")
 
 lines = read(filepath)
 
-rules = []
-updates = []
-for line in lines:
-    if "|" in line:
-        a, b = line.split("|")
-        rules.append((int(a), int(b)))
-    elif line != "":
-        updates.append([int(i) for i in line.split(",")])
+section_separator_index = lines.index("")
 
-result_ordered = 0
-result_non_ordered = 0
+rules = [numbers(line) for line in lines[:section_separator_index]]
+updates = [numbers(line) for line in lines[section_separator_index+1:]]
+
+ordered_updates = []
+unordered_updates = []
+
 for update in updates:
-    candidate = True
-
-    subrules = [(x, y) for x, y in rules if x in update and y in update]
-    for x, y in subrules:
+    applicable_rules = [(x, y) for x, y in rules if x in update and y in update]
+    for x, y in applicable_rules:
         if not (update.index(x) < update.index(y)):
-            candidate = False
+            unordered_updates.append(update)
             break
+    else:
+        ordered_updates.append(update)  # all rules are respected, the pages are sorted already
 
-    if candidate:
-        result_ordered += update[len(update)//2]  # middle page
-    else:  # incorrectly ordered
+
+if star != 2:
+    # sum of the middle pages
+    result = sum(update[len(update)//2] for update in ordered_updates)
+    print(f" *: {result}")
+
+if star != 1:
+    for update in unordered_updates:
+        applicable_rules = [(x, y) for x, y in rules if x in update and y in update]
+
         changed = True
         while changed:  # reorder until every page stays in place
             changed = False
-            for x, y in subrules:
+            for x, y in applicable_rules:
                 ix, iy = update.index(x), update.index(y)
                 if not (ix < iy):
                     update[ix], update[iy] = update[iy], update[ix]
                     changed = True
 
-        result_non_ordered += update[len(update)//2]  # middle page
-
-print(result_ordered)
-print(result_non_ordered)
+    # sum of the middle pages
+    result = sum(update[len(update)//2] for update in unordered_updates)
+    print(f"**: {result}")
