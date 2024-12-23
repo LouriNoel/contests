@@ -12,11 +12,11 @@ lines = read(filepath)
 locations = numbers(" ".join(lines))
 left, right = locations[::2], locations[1::2]
 
-# Sort each list so we can pair up the smallest / 2nd smallest / etc. number of each of them
-left.sort()
-right.sort()
-
 if star != 2:
+    # Sort each list so we can pair up the smallest / 2nd smallest / etc. number of each of them
+    left.sort()
+    right.sort()
+
     # Sum the distance of each pair (numbers associated by "smallest" rank)
     total_distance = sum(abs(a - b) for a, b in zip(left, right))
     print(f" *: {total_distance}")
