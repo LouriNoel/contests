@@ -43,4 +43,7 @@ Starting from the end of the list, for each file,
 check if there is enough free space (starting from the beginning) at a lower index.
 When found, we cannot simply swap these chunks because there can be more free space: we need to split it.
 
+A file can only be moved once, so either we remember the id of all files that were moved,
+or we only move files of decreasing id.
+
 Computing the checksum requires a different formula.
