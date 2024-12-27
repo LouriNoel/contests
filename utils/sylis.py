@@ -37,6 +37,43 @@ def words(src: str, separator: str | None = None) -> list[str]:
     return [w for w in src.split(separator) if w != ""]
 
 
+###########
+# INTEGER #
+###########
+
+def base_decomposition(n: int, base: int) -> list[int]:
+    """ Decompose `n` in a base. Return the list of digits.
+
+    The most significant bit is at index 0, the least significant bit is at the end of the list.
+
+    Example: (n=6 ; b=2) -> [1, 1, 0]
+    """
+    # https://stackoverflow.com/a/28666223
+    if n == 0:
+        return [0]
+    base_digits = []
+    while n:
+        base_digits.append(n % base)
+        n //= base
+    return base_digits[::-1]
+
+
+def base_decomposition_to_string(n: int, base: int, numerals="0123456789abcdefghijklmnopqrstuvwxyz") -> str:
+    """ Decompose `n` in a base. Return the string with the according `numeral` representation of digits.
+
+    You can call `result.zfill(M)` to get a fixed-length representation.
+
+    `"{0:b}".format(n)` would be enough for binary, `"{0:x}"` for hexadecimal, `"{0:o}"` for octal.
+
+    Does not work for a base greater than the length of `numerals` (36 by default).
+    """
+    # https://stackoverflow.com/a/2267428 but less performant
+    #return ((n == 0) and numerals[0]) or (base_decomposition_to_string(n // base, base, numerals).lstrip(numerals[0]) + numerals[n % base])
+
+    decomposition = base_decomposition(n, base)
+    return "".join(numerals[i] for i in decomposition)
+
+
 ########
 # GRID #
 ########
